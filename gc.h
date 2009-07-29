@@ -18,6 +18,7 @@ class GCObject {
 
  public:
   GCObject();
+  GCObject(GCObject const&);
   virtual ~GCObject();
 
   // Mark the object and all its children as live

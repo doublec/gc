@@ -12,6 +12,11 @@ GCObject::GCObject() :
   GarbageCollector::GC.addObject(this);
 }
 
+GCObject::GCObject(GCObject const&) :
+  mMarked(false) {
+  GarbageCollector::GC.addObject(this);
+}
+
 GCObject::~GCObject() {
 }
 
