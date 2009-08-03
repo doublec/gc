@@ -78,6 +78,9 @@ class GarbageCollector {
   // Go through all objects in the heap, unmarking the live
   // objects and destroying the unreferenced ones.
   void sweep(bool verbose);
+
+  // Number of live objects in heap
+  int live();
 };
 
 #endif

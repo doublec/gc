@@ -120,6 +120,10 @@ void GarbageCollector::sweep(bool verbose) {
   }
 }
 
+int GarbageCollector::live() {
+  return mHeap.size();
+}
+
 // Copyright (C) 2009 Chris Double. All Rights Reserved.
 // The original author of this code can be contacted at: chris.double@double.co.nz
 // 
