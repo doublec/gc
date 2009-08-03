@@ -59,8 +59,9 @@ class GarbageCollector {
   static GarbageCollector GC;
 
  public:
-  // Perform garbage collection
-  void collect();
+  // Perform garbage collection. If 'verbose' is true then
+  // GC stats will be printed to stdout.
+  void collect(bool verbose = false);
 
   // Add a root object to the collector.
   void addRoot(GCObject* root);
@@ -76,7 +77,7 @@ class GarbageCollector {
 
   // Go through all objects in the heap, unmarking the live
   // objects and destroying the unreferenced ones.
-  void sweep();
+  void sweep(bool verbose);
 };
 
 #endif

@@ -50,7 +50,7 @@ int GCMemory::size() {
 // GarbageCollector
 GarbageCollector GarbageCollector::GC;
 
-void GarbageCollector::collect() {
+void GarbageCollector::collect(bool verbose) {
   using namespace boost::posix_time;
   unsigned int start = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
 
@@ -59,12 +59,17 @@ void GarbageCollector::collect() {
        ++it)
     (*it)->mark();
 
-  cout << "Roots: " << mRoots.size() << endl;
-  cout << "GC: " << mHeap.size() << " objects in heap" << endl;
-  sweep();
+  if (verbose) {
+    cout << "Roots: " << mRoots.size() << endl;
+    cout << "GC: " << mHeap.size() << " objects in heap" << endl;
+  }
 
-  unsigned int end = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
-  cout << "GC: " << (end-start) << " milliseconds" << endl;
+  sweep(verbose);
+
+  if (verbose) {
+    unsigned int end = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
+    cout << "GC: " << (end-start) << " milliseconds" << endl;
+  }
 }
 
 void GarbageCollector::addRoot(GCObject* root) {
@@ -83,7 +88,7 @@ void GarbageCollector::removeObject(GCObject* o) {
   mHeap.erase(o);
 }
 
-void GarbageCollector::sweep() {
+void GarbageCollector::sweep(bool verbose) {
   unsigned int live = 0;
   unsigned int dead = 0;
   unsigned int total = 0;
@@ -109,8 +114,10 @@ void GarbageCollector::sweep() {
     mHeap.erase(*it);
     delete p;
   }
-  cout << "GC: " << live << " objects live after sweep" << endl;
-  cout << "GC: " << dead << " objects dead after sweep" << endl;
+  if (verbose) {
+    cout << "GC: " << live << " objects live after sweep" << endl;
+    cout << "GC: " << dead << " objects dead after sweep" << endl;
+  }
 }
 
 // Copyright (C) 2009 Chris Double. All Rights Reserved.
