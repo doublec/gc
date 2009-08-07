@@ -4,6 +4,7 @@
 #define GC_H
 
 #include <set>
+#include <map>
 
 // Base class for all objects that are tracked by
 // the garbage collector.
@@ -55,6 +56,10 @@ class GarbageCollector {
   // Collection of objects that are scanned for garbage.
   ObjectSet mRoots;
 
+  // Pinned objects
+  typedef std::map<GCObject*, unsigned int> PinnedSet;
+  PinnedSet mPinned;
+
   // Global garbage collector object
   static GarbageCollector GC;
 
@@ -68,6 +73,13 @@ class GarbageCollector {
 
   // Remove a root object from the collector.
   void removeRoot(GCObject* root);
+
+  // Pin an object so it temporarily won't be collected. 
+  // Pinned objects are reference counted. Pinning it
+  // increments the count. Unpinning it decrements it. When
+  // the count is zero then the object can be collected.
+  void pin(GCObject* o);
+  void unpin(GCObject* o);
 
   // Add an heap allocated object to the collector.
   void addObject(GCObject* o);

@@ -54,13 +54,21 @@ void GarbageCollector::collect(bool verbose) {
   using namespace boost::posix_time;
   unsigned int start = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
 
+  // Mark root objects
   for (ObjectSet::iterator it = mRoots.begin();
        it != mRoots.end();
        ++it)
     (*it)->mark();
 
+  // Mark pinned objects
+  for (PinnedSet::iterator it = mPinned.begin();
+       it != mPinned.end();
+       ++it)
+    (*it).first->mark();
+
   if (verbose) {
     cout << "Roots: " << mRoots.size() << endl;
+    cout << "Pinned: " << mPinned.size() << endl;
     cout << "GC: " << mHeap.size() << " objects in heap" << endl;
   }
 
@@ -78,6 +86,24 @@ void GarbageCollector::addRoot(GCObject* root) {
 
 void GarbageCollector::removeRoot(GCObject* root) {
   mRoots.erase(root);
+}
+
+void GarbageCollector::pin(GCObject* o) {
+  PinnedSet::iterator it = mPinned.find(o);
+  if (it == mPinned.end()) {
+    mPinned.insert(make_pair(o, 1));
+  }
+  else {
+    (*it).second++;
+  }
+}
+
+void GarbageCollector::unpin(GCObject* o) {
+  PinnedSet::iterator it = mPinned.find(o);
+  assert(it != mPinned.end());
+
+  if (--((*it).second) == 0) 
+    mPinned.erase(it);
 }
 
 void GarbageCollector::addObject(GCObject* o) {
