@@ -6,29 +6,34 @@
 #include <set>
 #include <map>
 
+class GCObject;
+class GCMemory;
+class GarbageCollector;
+
+
 // Base class for all objects that are tracked by
 // the garbage collector.
 class GCObject {
+    public:
+
+    // For mark and sweep algorithm. When a GC occurs
+    // all live objects are traversed and mMarked is
+    // set to true. This is followed by the sweep phase
+    // where all unmarked objects are deleted.
+    bool mMarked;
+
  public:
+    GCObject();
+    GCObject(GCObject const&);
+    virtual ~GCObject();
 
-  // For mark and sweep algorithm. When a GC occurs
-  // all live objects are traversed and mMarked is
-  // set to true. This is followed by the sweep phase
-  // where all unmarked objects are deleted.
-  bool mMarked;
+    // Mark the object and all its children as live
+    void mark();
 
- public:
-  GCObject();
-  GCObject(GCObject const&);
-  virtual ~GCObject();
-
-  // Mark the object and all its children as live
-  void mark();
-
-  // Overridden by derived classes to call mark()
-  // on objects referenced by this object. The default
-  // implemention does nothing.
-  virtual void markChildren();
+    // Overridden by derived classes to call mark()
+    // on objects referenced by this object. The default
+    // implemention does nothing.
+    virtual void markChildren();
 };
 
 // Wrapper for an array of bytes managed by the garbage
@@ -60,8 +65,14 @@ class GarbageCollector {
   typedef std::map<GCObject*, unsigned int> PinnedSet;
   PinnedSet mPinned;
 
+  // GC will be triggered if object count is larger than 1.5 times of object survived in
+  // last collect. See GarbageCollector::collect
+  size_t lastSurviveCount = 10;
+  bool autoTriggerVerbose = true;
+
   // Global garbage collector object
   static GarbageCollector GC;
+
 
  public:
   // Perform garbage collection. If 'verbose' is true then
@@ -74,7 +85,7 @@ class GarbageCollector {
   // Remove a root object from the collector.
   void removeRoot(GCObject* root);
 
-  // Pin an object so it temporarily won't be collected. 
+  // Pin an object so it temporarily won't be collected.
   // Pinned objects are reference counted. Pinning it
   // increments the count. Unpinning it decrements it. When
   // the count is zero then the object can be collected.
@@ -92,23 +103,23 @@ class GarbageCollector {
   void sweep(bool verbose);
 
   // Number of live objects in heap
-  int live();
+  size_t live();
 };
 
 #endif
 // Copyright (C) 2009 Chris Double. All Rights Reserved.
 // The original author of this code can be contacted at: chris.double@double.co.nz
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice,
 //    this list of conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
 //    and/or other materials provided with the distribution.
-// 
+//
 // THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
 // INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
 // FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE

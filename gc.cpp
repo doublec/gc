@@ -1,20 +1,28 @@
 // Copyright (C) 2009 Chris Double. All Rights Reserved.
 // See the license at the end of this file
 #include <iostream>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <cassert>
+#include <vector>
 #include "gc.h"
 
 using namespace std;
 
+GarbageCollector& GGC = GarbageCollector::GC;
+
 // GCObject
 GCObject::GCObject() :
-  mMarked(false) {
-  GarbageCollector::GC.addObject(this);
+    mMarked(false) {
+    if(GarbageCollector::GC.live() >
+        GarbageCollector::GC.lastSurviveCount + (GarbageCollector::GC.lastSurviveCount>>1)) {
+        GarbageCollector::GC.collect(GarbageCollector::GC.autoTriggerVerbose);
+        GarbageCollector::GC.lastSurviveCount = (GarbageCollector::GC.live()>10) ? GarbageCollector::GC.live() : 10;
+    }
+    GarbageCollector::GC.addObject(this);
 }
 
 GCObject::GCObject(GCObject const&) :
-  mMarked(false) {
-  GarbageCollector::GC.addObject(this);
+    mMarked(false) {
+    GarbageCollector::GC.addObject(this);
 }
 
 GCObject::~GCObject() {
@@ -51,8 +59,7 @@ int GCMemory::size() {
 GarbageCollector GarbageCollector::GC;
 
 void GarbageCollector::collect(bool verbose) {
-  using namespace boost::posix_time;
-  unsigned int start = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
+
 
   // Mark root objects
   for (ObjectSet::iterator it = mRoots.begin();
@@ -74,10 +81,6 @@ void GarbageCollector::collect(bool verbose) {
 
   sweep(verbose);
 
-  if (verbose) {
-    unsigned int end = (microsec_clock::universal_time() - ptime(min_date_time)).total_milliseconds();
-    cout << "GC: " << (end-start) << " milliseconds" << endl;
-  }
 }
 
 void GarbageCollector::addRoot(GCObject* root) {
@@ -102,7 +105,7 @@ void GarbageCollector::unpin(GCObject* o) {
   PinnedSet::iterator it = mPinned.find(o);
   assert(it != mPinned.end());
 
-  if (--((*it).second) == 0) 
+  if (--((*it).second) == 0)
     mPinned.erase(it);
 }
 
@@ -130,7 +133,7 @@ void GarbageCollector::sweep(bool verbose) {
     }
     else {
       erase.push_back(it);
-    } 
+    }
   }
   dead = erase.size();
   for (vector<ObjectSet::iterator>::iterator it = erase.begin();
@@ -146,23 +149,23 @@ void GarbageCollector::sweep(bool verbose) {
   }
 }
 
-int GarbageCollector::live() {
+size_t GarbageCollector::live() {
   return mHeap.size();
 }
 
 // Copyright (C) 2009 Chris Double. All Rights Reserved.
 // The original author of this code can be contacted at: chris.double@double.co.nz
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // 1. Redistributions of source code must retain the above copyright notice,
 //    this list of conditions and the following disclaimer.
-// 
+//
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
 //    and/or other materials provided with the distribution.
-// 
+//
 // THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
 // INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
 // FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
